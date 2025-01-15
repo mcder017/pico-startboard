@@ -45,25 +45,25 @@ greenConfigured = False
 timer = Timer()
 
 # pins
-gogreenPulldownInput = Pin(6, Pin.IN, Pin.PULL_UP)	# signals low
+onesecOutput = Pin(20, Pin.OUT)	# activate low
+customOutput = Pin(26, Pin.OUT)	# activate low
+resetOutput = Pin(16, Pin.OUT)	# activate low
+startstopOutput = Pin(18, Pin.OUT)	# activate low
 
-onesecPulldownOutput = Pin(2, Pin.OUT)	# activate low
-customPulldownOutput = Pin(3, Pin.OUT)	# activate low
-resetPulldownOutput = Pin(4, Pin.OUT)	# activate low
-startstopPulldownOutput = Pin(5, Pin.OUT)	# activate low
+gogreenInput = Pin(6, Pin.IN, Pin.PULL_UP)	# signals low
 
-flagPullupOutput = Pin(10, Pin.OUT)	# activate high
-buzzerPullupOutput = Pin(12, Pin.OUT)	# activate high
+flagOutput = Pin(10, Pin.OUT)	# activate high
+buzzerOutput = Pin(12, Pin.OUT)	# activate high
 
 led = Pin(25, Pin.OUT)
 
 # subroutines
 
 def startBuzz():
-    buzzerPullupOutput.value(activateBuzzerValue)
+    buzzerOutput.value(activateBuzzerValue)
     
 def stopBuzz():
-    buzzerPullupOutput.value(releaseBuzzerValue)
+    buzzerOutput.value(releaseBuzzerValue)
     
 def startNotifyBuzz(timer):
     startBuzz()    
@@ -90,43 +90,43 @@ def doTripleBuzz():
     # no final wait required after stopping buzz
     
 def doStopClock():
-#    global startstopPulldownOutput
-#    global customPulldownOutput
+#    global startstopOutput
+#    global customOutput
     global greenConfigured
     
-    startstopPulldownOutput.value(activateButtonValue)
+    startstopOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
-    startstopPulldownOutput.value(releaseButtonValue)
+    startstopOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
     
-    customPulldownOutput.value(activateButtonValue)
+    customOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
-    customPulldownOutput.value(releaseButtonValue)
+    customOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
     
-    startstopPulldownOutput.value(activateButtonValue)
+    startstopOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
-    startstopPulldownOutput.value(releaseButtonValue)
+    startstopOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
     
     greenConfigured = False
 
 def doStartClock():
-#    global flagPullupOutput
-#    global customPulldownOutput
+#    global flagOutput
+#    global customOutput
     global greenConfigured
     
     # trigger flag by shorting lines
-    flagPullupOutput.value(activateFlagValue)	
+    flagOutput.value(activateFlagValue)	
     
     # start clock
-    customPulldownOutput.value(activateButtonValue)
+    customOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
-    customPulldownOutput.value(releaseButtonValue)
+    customOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
     
     # restore flag
-    flagPullupOutput.value(releaseFlagValue)
+    flagOutput.value(releaseFlagValue)
 
     # notify athlete aurally
     # (short delays above ok as sound still starts
@@ -137,10 +137,10 @@ def doStartClock():
     
 def doStartup():
     global timer
-#    global resetPulldownOutput
-#    global onesecPulldownOutput
-#    global buzzerPullupOutput
-#    global customPulldownOutput
+#    global resetOutput
+#    global onesecOutput
+#    global buzzerOutput
+#    global customOutput
 #    global countdownWholeSeconds
 #    global pressButtonPauseMS
 #    global betweenButtonPauseMS
@@ -148,19 +148,19 @@ def doStartup():
     global finishedSetup
     
     # reset the clock to defaults
-    resetPulldownOutput.value(activateButtonValue)
+    resetOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
-    resetPulldownOutput.value(releaseButtonValue)
+    resetOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
     led.toggle()
     
     # set up false start countdown duration    
     for addSec in range(countdownWholeSeconds):
-        onesecPulldownOutput.value(activateButtonValue)
+        onesecOutput.value(activateButtonValue)
         startBuzz()
         time.sleep_ms(pressButtonPauseMS)
         
-        onesecPulldownOutput.value(releaseButtonValue)
+        onesecOutput.value(releaseButtonValue)
         stopBuzz()
         time.sleep_ms(betweenButtonPauseMS)
         
@@ -168,12 +168,12 @@ def doStartup():
         
     # store the countdown in the clock's Custom button
     startNotifyBuzz(timer)	# start buzz pattern
-    customPulldownOutput.value(activateButtonValue)
+    customOutput.value(activateButtonValue)
     time.sleep_ms(customUpdateHoldMS)
     
     timer.deinit()	# stop buzz pattern
     timer = Timer()
-    customPulldownOutput.value(releaseButtonValue)
+    customOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
     led.toggle()
     
@@ -191,9 +191,9 @@ led.value(1)
 
 tickleCount = 0
 while True:
-    if greenConfigured and gogreenPulldownInput.value() == quietGoGreenValue:
+    if greenConfigured and gogreenInput.value() == quietGoGreenValue:
         doStopClock()
-    elif gogreenPulldownInput.value() == signallingGoGreenValue:
+    elif gogreenInput.value() == signallingGoGreenValue:
         doStartClock()
     else:
         time.sleep_ms(loopSleepMS)
@@ -203,3 +203,5 @@ while True:
             doStopClock()
             tickleCount = 0
             led.toggle()
+        
+        
