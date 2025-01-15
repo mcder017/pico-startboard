@@ -10,13 +10,13 @@ import re
 from machine import Pin, Timer
 
 # constants
-betweenButtonPauseMS = 50
+betweenButtonPauseMS = 100
 pressButtonPauseMS = 100
 buzzSetupNotifyOnMS = 200
 buzzSetupNotifyOffMS = 800
 buzzFlagOnMS = 300
 buzzFlagOffMS = 200
-customUpdateHoldMS = 5000
+customUpdateHoldMS = 5300
 
 countdownWholeSeconds = 15
 
@@ -45,15 +45,15 @@ greenConfigured = False
 timer = Timer()
 
 # pins
-gogreenPulldownInput = Pin(6, Pin.IN, Pin.PULL_DOWN)	# signals low
+gogreenPulldownInput = Pin(6, Pin.IN, Pin.PULL_UP)	# signals low
 
-onesecPulldownOutput = Pin(2, Pin.OUT, Pin.PULL_DOWN)	# activate low
-customPulldownOutput = Pin(3, Pin.OUT, Pin.PULL_DOWN)	# activate low
-resetPulldownOutput = Pin(4, Pin.OUT, Pin.PULL_DOWN)	# activate low
-startstopPulldownOutput = Pin(5, Pin.OUT, Pin.PULL_DOWN)	# activate low
+onesecPulldownOutput = Pin(2, Pin.OUT)	# activate low
+customPulldownOutput = Pin(3, Pin.OUT)	# activate low
+resetPulldownOutput = Pin(4, Pin.OUT)	# activate low
+startstopPulldownOutput = Pin(5, Pin.OUT)	# activate low
 
-flagPullupOutput = Pin(10, Pin.OUT, Pin.PULL_UP)	# activate high
-buzzerPullupOutput = Pin(12, Pin.OUT, Pin.PULL_UP)	# activate high
+flagPullupOutput = Pin(10, Pin.OUT)	# activate high
+buzzerPullupOutput = Pin(12, Pin.OUT)	# activate high
 
 led = Pin(25, Pin.OUT)
 
@@ -203,5 +203,3 @@ while True:
             doStopClock()
             tickleCount = 0
             led.toggle()
-        
-        
