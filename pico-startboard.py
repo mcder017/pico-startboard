@@ -10,17 +10,19 @@ import re
 from machine import Pin, Timer
 
 # constants
+minElectricalFlagMS = 100
+
 betweenButtonPauseMS = 100
 pressButtonPauseMS = 200
 
-buzzSetupNotifyOnMS = 100
-buzzSetupNotifyOffMS = 1400
+buzzSetupNotifyOnMS = 50
+buzzSetupNotifyOffMS = 1500
 
-buzzFlagOnMS = 300
-buzzFlagOffMS = 200
+buzzAttentionOnMS = 100
+buzzAttentionOffMS = 150
 
-buzzExpiredOnMS = 750
-buzzExpiredOffMS = 1400
+buzzExpiredOnMS = 500
+buzzExpiredOffMS = 1500
 
 customUpdateHoldMS = 5300
 
@@ -48,9 +50,12 @@ buzzAtExpire = True
 signallingGoGreenValue = 0
 quietGoGreenValue = 1
 
+attentionBuzzStopCount = 2
+
 # state variables
 finishedSetup = False
 greenConfigured = False
+attentionBuzzCount = 0
 # store time.ticks_add(time.ticks_ms(), countdownMS) when light goes green
 # while still green, test time.ticks_diff(greenExpireTick, time.ticks_ms()) <= 0
 # to indicate expired (not forever, but within period of minutes)
@@ -80,16 +85,16 @@ def startBuzz():
 def stopBuzz():
     buzzerOutput.value(releaseBuzzerValue)
     
-def startNotifyBuzz(timer):
+def startInSetupBuzz(timer):
     startBuzz()    
-    timer.init(mode=Timer.ONE_SHOT, period=buzzSetupNotifyOnMS, callback=stopNotifyBuzz)
+    timer.init(mode=Timer.ONE_SHOT, period=buzzSetupNotifyOnMS, callback=stopInSetupBuzz)
 
-def stopNotifyBuzz(timer):
+def stopInSetupBuzz(timer):
     stopBuzz()
-    timer.init(mode=Timer.ONE_SHOT, period=buzzSetupNotifyOffMS, callback=startNotifyBuzz)
+    timer.init(mode=Timer.ONE_SHOT, period=buzzSetupNotifyOffMS, callback=startInSetupBuzz)
     
-def startNotifyBuzzPattern():
-    startNotifyBuzz(timer)
+def startInSetupBuzzPattern():
+    startInSetupBuzz(timer)
     
 def stopBuzzPattern():	# works for notify pattern, expired pattern, ...
     global timer    
@@ -109,69 +114,68 @@ def stopExpiredBuzz(timer):
 def startExpiredBuzzPattern():
     startExpiredBuzz(timer)
     
-def doTripleBuzz():
-    startBuzz()
-    time.sleep_ms(buzzFlagOnMS)
+def startAttentionBuzz(timer):
+    startBuzz()    
+    timer.init(mode=Timer.ONE_SHOT, period=buzzAttentionOnMS, callback=stopAttentionBuzz)
+
+def stopAttentionBuzz(timer):
+    global attentionBuzzCount
     stopBuzz()
-    time.sleep_ms(buzzFlagOffMS)
+    attentionBuzzCount += 1
+    if attentionBuzzCount < attentionBuzzStopCount:
+        timer.init(mode=Timer.ONE_SHOT, period=buzzAttentionOffMS, callback=startAttentionBuzz)        
+    # else done
     
-    startBuzz()
-    time.sleep_ms(buzzFlagOnMS)
-    stopBuzz()
-    time.sleep_ms(buzzFlagOffMS)
+def startAttentionBuzzPattern():
+    global attentionBuzzCount
+    attentionBuzzCount = 0
+    startAttentionBuzz(timer)
     
-    startBuzz()
-    time.sleep_ms(buzzFlagOnMS)
-    stopBuzz()
-    # no final wait required after stopping buzz
-    
-def doStopClock():
-    startstopOutput.value(activateButtonValue)
-    time.sleep_ms(pressButtonPauseMS)
-    startstopOutput.value(releaseButtonValue)
-    time.sleep_ms(betweenButtonPauseMS)
-    
+def doPrepareClock():
+    # if stopped, custom restores stored value and starts clock
+    # if running, custom does nothing
+    # thus, custom ensures clock is running (as long as a custom value was stored)
     customOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
     customOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
-    
+
+    # st-sp toggles clock running status (to stopped)
     startstopOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
     startstopOutput.value(releaseButtonValue)
     time.sleep_ms(betweenButtonPauseMS)
+
+def doEnsureStopAndPrepareClock():
+    doPrepareClock()	# custom / st-sp ensures clock stopped (if running, custom does nothing)
+    doPrepareClock()	# when already stopped, custom starts clock at stored value, st-sp stops it promptly
     
 def doStartClock():
     global greenExpireTick
     
+    # clock starts counting at release of custom
+    # (unless held long enough to store value)
+    customOutput.value(activateButtonValue)
+    time.sleep_ms(pressButtonPauseMS)
+
     # trigger flag by shorting lines
     flagOutput.value(activateFlagValue)
     
+    # notify athlete aurally
+    if buzzAtStartCountdown:
+        startAttentionBuzzPattern()	# returns promptly (uses timer to handle buzz)
+    
     # start clock
-    customOutput.value(activateButtonValue)
-    time.sleep_ms(pressButtonPauseMS)
     customOutput.value(releaseButtonValue)
     greenExpireTick = time.ticks_add(time.ticks_ms(), countdownMS)	# offset from timer green by button activation duration
-    time.sleep_ms(betweenButtonPauseMS)
+    
+    # avoid rapid button press, and ensure electrical flag recorded
+    time.sleep_ms(max(minElectricalFlagMS, betweenButtonPauseMS))
     
     # restore flag
     flagOutput.value(releaseFlagValue)
 
-    # notify athlete aurally
-    # (short delays above ok as sound still starts
-    #  within first ~half-second of starting timer)
-    if buzzAtStartCountdown:
-        doTripleBuzz()
-    
 def doStartup():
-#    global resetOutput
-#    global onesecOutput
-#    global buzzerOutput
-#    global customOutput
-#    global countdownWholeSeconds
-#    global pressButtonPauseMS
-#    global betweenButtonPauseMS
-#    global customUpdateHoldMS
     global finishedSetup
     
     # reset the clock to defaults
@@ -181,7 +185,7 @@ def doStartup():
     time.sleep_ms(betweenButtonPauseMS)
     led.toggle()
     
-    startNotifyBuzzPattern()
+    startInSetupBuzzPattern()
     
     # set up false start countdown duration    
     for addSec in range(countdownWholeSeconds):
@@ -203,12 +207,12 @@ def doStartup():
     time.sleep_ms(betweenButtonPauseMS)
     led.toggle()
     
-    doStopClock()    
+    doEnsureStopAndPrepareClock()    
     led.toggle()
 
     stopBuzzPattern()
     
-    doTripleBuzz()
+    startAttentionBuzzPattern()
     led.toggle()
     
     finishedSetup = True
@@ -224,7 +228,7 @@ while True:
         if expiredBuzzing:
             stopBuzzPattern()
             expiredBuzzing = False
-        doStopClock()	
+        doEnsureStopAndPrepareClock()	# avoid race condition between operator and clock
         greenConfigured = False
         tickleCount = 0	# touched buttons
         
@@ -244,7 +248,10 @@ while True:
         
         if tickleCount == loopsPerTickle:
             led.toggle()
-            doStopClock()		# if user still showing green, still keep clock awake while buzzing continues
+            if not greenConfigured:
+                doPrepareClock()		# clock known stopped
+            else:
+                doEnsureStopAndPrepareClock()	# if user still showing green, still keep clock awake while buzzing continues
             tickleCount = 0
             led.toggle()
         
