@@ -10,8 +10,8 @@ import re
 from machine import Pin, Timer
 
 # constants
-betweenButtonPauseMS = 50
-pressButtonPauseMS = 50
+betweenButtonPauseMS = 100
+pressButtonPauseMS = 100
 
 buzzSetupNotifyOnMS = 100
 buzzSetupNotifyOffMS = 1400
@@ -49,7 +49,7 @@ quietGoGreenValue = 1
 finishedSetup = False
 greenConfigured = False
 # store time.ticks_add(time.ticks_ms(), countdownMS) when light goes green
-# while still green, test ticks_diff(greenExpireTick, time.ticks_ms()) <= 0
+# while still green, test time.ticks_diff(greenExpireTick, time.ticks_ms()) <= 0
 # to indicate expired (not forever, but within period of minutes)
 greenExpireTick = 0
 expiredBuzzing = False
@@ -232,7 +232,7 @@ while True:
         time.sleep_ms(loopSleepMS)
         tickleCount += 1
         
-        if not expiredBuzzing and greenConfigured and ticks_diff(greenExpireTick, time.ticks_ms()) <= 0:
+        if not expiredBuzzing and greenConfigured and time.ticks_diff(greenExpireTick, time.ticks_ms()) <= 0:
             # recently expired and still green
             startExpiredBuzzPattern()
             expiredBuzzing = True
