@@ -26,8 +26,8 @@ loopSleepMS = 50	# lag on detecting green request and red request
 
 loopsPerTickle = (150*1000)/loopSleepMS	# under 3 minute auto shutdown
 
-activateButtonValue = 0
-releaseButtonValue = 1
+activateButtonValue = 1
+releaseButtonValue = 0
 
 activateFlagValue = 1
 releaseFlagValue = 0
