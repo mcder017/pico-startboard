@@ -39,8 +39,11 @@ releaseButtonValue = 0
 activateFlagValue = 1
 releaseFlagValue = 0
 
-activateBuzzerValue = 1	# 1 if buzzer in use, 0 if never buzz
+activateBuzzerValue = 1
 releaseBuzzerValue = 0
+
+buzzAtStartCountdown = True
+buzzAtExpire = True
 
 signallingGoGreenValue = 0
 quietGoGreenValue = 1
@@ -95,7 +98,8 @@ def stopBuzzPattern():	# works for notify pattern, expired pattern, ...
     stopBuzz()		# ensure buzz pattern stopped "off"
     
 def startExpiredBuzz(timer):
-    startBuzz()    
+    if buzzAtExpire:
+        startBuzz()    
     timer.init(mode=Timer.ONE_SHOT, period=buzzExpiredOnMS, callback=stopExpiredBuzz)
 
 def stopExpiredBuzz(timer):
@@ -156,7 +160,8 @@ def doStartClock():
     # notify athlete aurally
     # (short delays above ok as sound still starts
     #  within first ~half-second of starting timer)
-    doTripleBuzz()
+    if buzzAtStartCountdown:
+        doTripleBuzz()
     
 def doStartup():
 #    global resetOutput
