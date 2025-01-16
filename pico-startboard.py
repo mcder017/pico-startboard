@@ -193,8 +193,10 @@ tickleCount = 0
 while True:
     if greenConfigured and gogreenInput.value() == quietGoGreenValue:
         doStopClock()
+        tickleCount = 0
     elif not greenConfigured and gogreenInput.value() == signallingGoGreenValue:
         doStartClock()
+        tickleCount = 0
     else:
         time.sleep_ms(loopSleepMS)
         tickleCount += 1
