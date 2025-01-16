@@ -133,7 +133,7 @@ def doStartClock():
     #  within first ~half-second of starting timer)
     doTripleBuzz()
     
-    greenConfigured= True
+    greenConfigured = True
     
 def doStartup():
     global timer
@@ -193,7 +193,7 @@ tickleCount = 0
 while True:
     if greenConfigured and gogreenInput.value() == quietGoGreenValue:
         doStopClock()
-    elif gogreenInput.value() == signallingGoGreenValue:
+    elif not greenConfigured and gogreenInput.value() == signallingGoGreenValue:
         doStartClock()
     else:
         time.sleep_ms(loopSleepMS)
