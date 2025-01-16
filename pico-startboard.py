@@ -11,7 +11,7 @@ from machine import Pin, Timer
 
 # constants
 betweenButtonPauseMS = 100
-pressButtonPauseMS = 100
+pressButtonPauseMS = 200
 
 buzzSetupNotifyOnMS = 100
 buzzSetupNotifyOffMS = 1400
