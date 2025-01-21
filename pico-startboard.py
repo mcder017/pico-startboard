@@ -11,8 +11,6 @@ from machine import Pin, Timer
 
 # constants
 minElectricalFlagMS = 100
-minCarefulStopPauseMS = 510
-minPreparedStopPauseMS = 150
 
 betweenButtonPauseMS = 100
 pressButtonPauseMS = 200
@@ -134,14 +132,13 @@ def startAttentionBuzzPattern():
     startAttentionBuzz(timer)
     
 def doPrepareClock():
-    # if stopped, custom restores stored value and starts clock
-    # if running, custom does nothing
-    # thus, custom ensures clock is running (as long as a custom value was stored)
+    # given stopped, and not with zero displayed
+    # custom restores previously stored value and starts clock
     customOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
     customOutput.value(releaseButtonValue)
     
-    time.sleep_ms(max(minPreparedStopPauseMS, betweenButtonPauseMS))
+    time.sleep_ms(betweenButtonPauseMS)
 
     # st-sp toggles clock running status (to stopped)
     startstopOutput.value(activateButtonValue)
@@ -151,24 +148,36 @@ def doPrepareClock():
     time.sleep_ms(betweenButtonPauseMS)
 
 def doCarefulStopClock():
-    # observed custom/start-stop, done twice, as sometimes stopping 1s low.
-    # seeking to avoid that visual effect by expanding the first stop steps.
+    # call when given clock either running or stopped AT ZERO
+    
+    # if clock running, st-sp stops clock
+    # (if clock stopped not at zero, st-sp resumes countdown)
+    # if clock stopped at zero, st-sp resets to stored value, still stopped
+    startstopOutput.value(activateButtonValue)
+    time.sleep_ms(pressButtonPauseMS)
+    startstopOutput.value(releaseButtonValue)
+    
+    time.sleep_ms(betweenButtonPauseMS)
+    
+    # if clock running, custom does nothing
+    # if clock stopped and not at zero, custom resets to stored value and starts clock
+    # (if clock stopped at zero, custom resets to stored value and does NOT start clock)
     customOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
     customOutput.value(releaseButtonValue)
     
-    time.sleep_ms(max(minCarefulStopPauseMS, betweenButtonPauseMS))
+    time.sleep_ms(betweenButtonPauseMS)
 
     # st-sp toggles clock running status (to stopped)
     startstopOutput.value(activateButtonValue)
     time.sleep_ms(pressButtonPauseMS)
     startstopOutput.value(releaseButtonValue)
     
-    time.sleep_ms(max(minCarefulStopPauseMS, betweenButtonPauseMS))
+    time.sleep_ms(betweenButtonPauseMS)
     
 def doEnsureStopAndPrepareClock():
-    doCarefulStopClock()	# custom / st-sp ensures clock stopped (if running, custom does nothing)
-    doPrepareClock()	# when already stopped, custom starts clock at stored value, st-sp stops it promptly
+    doCarefulStopClock()	# custom / st-sp ensures clock stopped and not at zero (given previously stored value)
+    doPrepareClock()	# when already stopped, and not at zero, custom starts clock at stored value, st-sp stops it promptly
     
 def doStartClock():
     global greenExpireTick
