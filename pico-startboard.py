@@ -205,6 +205,13 @@ def doStartup():
     time.sleep_ms(betweenButtonPauseMS)
     led.toggle()
     
+    # again, in case first press only woke the clock
+    resetOutput.value(activateButtonValue)
+    time.sleep_ms(pressButtonPauseMS)
+    resetOutput.value(releaseButtonValue)
+    time.sleep_ms(betweenButtonPauseMS)
+    led.toggle()
+    
     startInSetupBuzzPattern()
     
     # set up false start countdown duration    
